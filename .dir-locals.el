@@ -1,2 +1,2 @@
-((python-mode . ((elpy-test-discover-runner-command . elpy-test-pytest-runner)
+((python-mode . ((elpy-test-runner . elpy-test-pytest-runner)
                  )))
