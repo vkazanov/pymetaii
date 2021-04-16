@@ -1,7 +1,8 @@
 import pytest
 
 from metaiivm import VM
-from metaiivm import op_TST, op_ID, op_NUM, op_SR
+from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
+from metaiivm import op_B, op_BT, op_BF, op_BE
 
 
 @pytest.mark.parametrize("vm_buf_begin, op_arg, vm_buf_end, is_success", [
@@ -70,3 +71,126 @@ def test_op_SR(vm_buf_begin, vm_buf_end, is_success):
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
+
+
+@pytest.mark.parametrize("label_target, pc_target", [
+    ("TARGET1", 10)
+])
+def test_op_CLL(label_target, pc_target):
+    vm = VM("bla")
+    pc_original = vm.pc
+    vm.label_to_pc[label_target] = pc_target
+    vm.label1_set("label1_orig")
+    vm.label2_set("label2_orig")
+
+    assert pc_original != pc_target
+    assert vm.label1() == "label1_orig"
+    assert vm.label2() == "label2_orig"
+
+    op_CLL(vm, label_target)
+    assert vm.pc == pc_target
+    assert vm.label1() is None
+    assert vm.label2() is None
+
+
+@pytest.mark.parametrize("label_target, pc_target", [
+    ("TARGET1", 10)
+])
+def test_op_R(label_target, pc_target):
+    vm = VM("bla")
+    pc_original = vm.pc
+    vm.label_to_pc[label_target] = pc_target
+    vm.label1_set("label1_orig")
+    vm.label2_set("label2_orig")
+
+    assert pc_original != pc_target
+    assert vm.label1() == "label1_orig"
+    assert vm.label2() == "label2_orig"
+
+    op_CLL(vm, label_target)
+    assert vm.pc == pc_target
+    assert vm.label1() is None
+    assert vm.label2() is None
+
+    op_R(vm)
+    assert pc_original == vm.pc
+    assert vm.label1() == "label1_orig"
+    assert vm.label2() == "label2_orig"
+
+
+@pytest.mark.parametrize("switch_orig", [
+    (True), (False)
+])
+def test_op_SET(switch_orig):
+    vm = VM("bla")
+    vm.switch = switch_orig
+
+    op_SET(vm)
+    assert vm.switch is True
+
+
+@pytest.mark.parametrize("switch, label_target, pc_target", [
+    (True, "TARGET", 10),
+    (False, "TARGET", 10),
+])
+def test_op_B(switch, label_target, pc_target):
+    vm = VM("bla")
+    vm.label_to_pc[label_target] = pc_target
+    vm.switch = switch
+    vm_orig = vm.pc
+    assert vm_orig != pc_target
+
+    op_B(vm, "TARGET")
+    assert vm.pc == pc_target
+
+
+@pytest.mark.parametrize("switch, must_jump, label_target, pc_target", [
+    (True, True, "TARGET", 10),
+    (False, False, "TARGET", 10),
+])
+def test_op_BT(switch, must_jump, label_target, pc_target):
+    vm = VM("bla")
+    vm.label_to_pc[label_target] = pc_target
+    vm.switch = switch
+    vm_orig = vm.pc
+    assert vm_orig != pc_target
+
+    op_BT(vm, "TARGET")
+    if must_jump:
+        assert vm.pc == pc_target
+    else:
+        assert vm.pc == vm_orig
+
+
+@pytest.mark.parametrize("switch, must_jump, label_target, pc_target", [
+    (True, False, "TARGET", 10),
+    (False, True, "TARGET", 10),
+])
+def test_op_BF(switch, must_jump, label_target, pc_target):
+    vm = VM("bla")
+    vm.label_to_pc[label_target] = pc_target
+    vm.switch = switch
+    vm_orig = vm.pc
+    assert vm_orig != pc_target
+
+    op_BF(vm, "TARGET")
+    if must_jump:
+        assert vm.pc == pc_target
+    else:
+        assert vm.pc == vm_orig
+
+
+@pytest.mark.parametrize("switch, must_err", [
+    (True, False),
+    (False, True),
+])
+def test_op_BE(switch, must_err):
+    vm = VM("bla")
+    vm.switch = switch
+
+    assert not vm.is_err
+    op_BE(vm)
+    if must_err:
+        assert vm.is_err
+    else:
+        assert not vm.is_err
