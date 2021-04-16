@@ -1,8 +1,12 @@
+import io
+
 import pytest
 
 from metaiivm import VM
 from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
 from metaiivm import op_B, op_BT, op_BF, op_BE
+from metaiivm import op_CL, op_CI, op_GN1, op_GN2
+from metaiivm import op_LB, op_OUT, op_ADR, op_END
 
 
 @pytest.mark.parametrize("vm_buf_begin, op_arg, vm_buf_end, is_success", [
@@ -194,3 +198,71 @@ def test_op_BE(switch, must_err):
         assert vm.is_err
     else:
         assert not vm.is_err
+
+
+def test_op_CL():
+    vm = VM("bla")
+
+    assert not vm.output_buf
+    op_CL(vm, "test")
+    assert vm.output_buf[-1] == "test"
+
+
+def test_op_CI():
+    vm = VM("bla")
+    vm.token_buf = "test"
+
+    assert not vm.output_buf
+    op_CI(vm)
+    assert vm.output_buf[-1] == "test"
+
+
+def test_op_GN1():
+    vm = VM("bla")
+    assert vm.label_counter == 0
+    assert vm.label1() is None
+    op_GN1(vm)
+    assert vm.label1() == "L0"
+    assert vm.output_buf[-1] == "L0"
+
+
+def test_op_GN2():
+    vm = VM("bla")
+    assert vm.label_counter == 0
+    assert vm.label2() is None
+    op_GN2(vm)
+    assert vm.label2() == "L0"
+    assert vm.output_buf[-1] == "L0"
+
+
+def test_op_LB():
+    vm = VM("bla")
+    vm.output_column = 10
+    op_LB(vm)
+    assert vm.output_column == 0
+
+
+def test_op_OUT():
+    output = io.StringIO()
+    vm = VM("bla", output_file=output)
+    vm.output_column = 0
+    vm.output_buf = ["teststr"]
+
+    op_OUT(vm)
+    assert len(vm.output_buf) == 0
+    assert vm.output_col == 8
+    assert output.getvalue() == "teststr\n"
+
+
+def test_op_ADR():
+    vm = VM("bla")
+    vm.label_to_pc["START"] = 100
+
+    assert vm.pc == 0
+    op_ADR(vm, "START")
+    assert vm.pc == 100
+
+
+def test_op_END():
+    # noop
+    pass
