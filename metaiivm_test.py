@@ -2,12 +2,44 @@ import io
 
 import pytest
 
-from metaiivm import VM
+from metaiivm import VM, parse_file, Inst
 from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
 from metaiivm import op_B, op_BT, op_BF, op_BE
 from metaiivm import op_CL, op_CI, op_GN1, op_GN2
-from metaiivm import op_LB, op_OUT, op_ADR, op_END
+from metaiivm import op_LB, op_OUT, op_ADR
 
+
+#
+# Test reading opcodes from a file
+
+@pytest.mark.parametrize("code, instrs_want", [
+    ("        ID\n", [Inst(op="ID")]),
+    ("        ID ARG\n", [Inst(op="ID", arg="ARG")]),
+    ("LBL\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["LBL"])]),
+    ("L01\nL02\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]),
+    (
+"""\
+L2
+        CLL AS
+        BT L2
+        SET
+        BE\
+""",
+        [
+            Inst(op="CLL", arg="AS", labels=["L2"]),
+            Inst(op="BT", arg="L2"),
+            Inst(op="SET"),
+            Inst(op="BE"),
+        ]),
+])
+def test_parse_file(code, instrs_want):
+    instrs_got  = parse_file(io.StringIO(code))
+
+    assert instrs_got == instrs_want
+
+
+#
+# Test ops
 
 @pytest.mark.parametrize("vm_buf_begin, op_arg, vm_buf_end, is_success", [
     ("true", "true", "", True),
@@ -33,7 +65,7 @@ def test_op_TST(vm_buf_begin, op_arg, vm_buf_end, is_success):
 ])
 def test_op_ID(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_ID(vm)
+    op_ID(vm, None)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -52,7 +84,7 @@ def test_op_ID(vm_buf_begin, token_found, vm_buf_end, is_success):
 ])
 def test_op_NUM(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_NUM(vm)
+    op_NUM(vm, None)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -71,7 +103,7 @@ def test_op_NUM(vm_buf_begin, token_found, vm_buf_end, is_success):
 ])
 def test_op_SR(vm_buf_begin, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_SR(vm)
+    op_SR(vm, None)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -116,7 +148,7 @@ def test_op_R(label_target, pc_target):
     assert vm.label1() is None
     assert vm.label2() is None
 
-    op_R(vm)
+    op_R(vm, None)
     assert pc_original == vm.pc
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
@@ -129,7 +161,7 @@ def test_op_SET(switch_orig):
     vm = VM("bla")
     vm.switch = switch_orig
 
-    op_SET(vm)
+    op_SET(vm, None)
     assert vm.switch is True
 
 
@@ -193,7 +225,7 @@ def test_op_BE(switch, must_err):
     vm.switch = switch
 
     assert not vm.is_err
-    op_BE(vm)
+    op_BE(vm, None)
     if must_err:
         assert vm.is_err
     else:
@@ -213,7 +245,7 @@ def test_op_CI():
     vm.token_buf = "test"
 
     assert not vm.output_buf
-    op_CI(vm)
+    op_CI(vm, None)
     assert vm.output_buf[-1] == "test"
 
 
@@ -221,7 +253,7 @@ def test_op_GN1():
     vm = VM("bla")
     assert vm.label_counter == 0
     assert vm.label1() is None
-    op_GN1(vm)
+    op_GN1(vm, None)
     assert vm.label1() == "L0"
     assert vm.output_buf[-1] == "L0"
 
@@ -230,7 +262,7 @@ def test_op_GN2():
     vm = VM("bla")
     assert vm.label_counter == 0
     assert vm.label2() is None
-    op_GN2(vm)
+    op_GN2(vm, None)
     assert vm.label2() == "L0"
     assert vm.output_buf[-1] == "L0"
 
@@ -238,7 +270,7 @@ def test_op_GN2():
 def test_op_LB():
     vm = VM("bla")
     vm.output_column = 10
-    op_LB(vm)
+    op_LB(vm, None)
     assert vm.output_column == 0
 
 
@@ -248,7 +280,7 @@ def test_op_OUT():
     vm.output_column = 0
     vm.output_buf = ["teststr"]
 
-    op_OUT(vm)
+    op_OUT(vm, None)
     assert len(vm.output_buf) == 0
     assert vm.output_col == 8
     assert output.getvalue() == "teststr\n"

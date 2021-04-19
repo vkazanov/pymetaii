@@ -1,11 +1,36 @@
 #!/usr/bin/env python3
 import re
 import sys
+from collections import namedtuple
+
+
+LINE_RE = re.compile(r"^ +([A-Za-z]\w+) *([A-Za-z]\w+)?$")
+
+
+Inst = namedtuple("Inst", ["op", "labels", "arg"], defaults=[None, None])
+
+
+def parse_file(file_object):
+    instructions = []
+    instr_labels = []
+    for line in file_object:
+        if line.startswith(" "):
+            match = LINE_RE.match(line)
+            instr = Inst(
+                op=match[1], arg=match[2],
+                labels=instr_labels if instr_labels else None
+            )
+            instructions.append(instr)
+            instr_labels = []
+        else:
+            instr_labels.append(line.strip())
+
+    return instructions
 
 
 class VM:
 
-    def __init__(self, input_buf, output_file=sys.stdout):
+    def __init__(self, input_buf, program=[], output_file=sys.stdout):
         self.output_file = output_file
 
         self.input_buf_index = 0
@@ -91,7 +116,7 @@ def op_TST(vm, str_):
         vm.switch = False
 
 
-def op_ID(vm):
+def op_ID(vm, _):
     vm.skip_space()
 
     input_ = vm.input()
@@ -103,7 +128,7 @@ def op_ID(vm):
         vm.switch = False
 
 
-def op_NUM(vm):
+def op_NUM(vm, _):
     vm.skip_space()
 
     input_ = vm.input()
@@ -115,7 +140,7 @@ def op_NUM(vm):
         vm.switch = False
 
 
-def op_SR(vm):
+def op_SR(vm, _):
     vm.skip_space()
 
     # TODO: single quote quoting: ('this is a string ''with'' a quote')
@@ -133,13 +158,13 @@ def op_CLL(vm, label):
     vm.pc_set_push(vm.label_to_pc[label])
 
 
-def op_R(vm):
+def op_R(vm, _):
     vm.label1_pop()
     vm.label2_pop()
     vm.pc_pop_set()
 
 
-def op_SET(vm):
+def op_SET(vm, _):
     vm.switch = True
 
 
@@ -157,7 +182,7 @@ def op_BF(vm, label):
         vm.pc = vm.label_to_pc[label]
 
 
-def op_BE(vm):
+def op_BE(vm, _):
     if not vm.switch:
         vm.is_err = True
 
@@ -166,11 +191,11 @@ def op_CL(vm, str_):
     vm.output_buf.append(str_)
 
 
-def op_CI(vm):
+def op_CI(vm, _):
     vm.output_buf.append(vm.token_buf)
 
 
-def op_GN1(vm):
+def op_GN1(vm, _):
     label = vm.label1()
     if vm.label1() is None:
         label = vm.label_generate()
@@ -178,7 +203,7 @@ def op_GN1(vm):
     vm.output_buf.append(label)
 
 
-def op_GN2(vm):
+def op_GN2(vm, _):
     label = vm.label2()
     if vm.label2() is None:
         label = vm.label_generate()
@@ -186,11 +211,11 @@ def op_GN2(vm):
     vm.output_buf.append(label)
 
 
-def op_LB(vm):
+def op_LB(vm, _):
     vm.output_column = 0
 
 
-def op_OUT(vm):
+def op_OUT(vm, _):
     vm.dump_output()
     vm.output_column == 8
 
@@ -199,5 +224,5 @@ def op_ADR(vm, start_label):
     vm.pc = vm.label_to_pc[start_label]
 
 
-def op_END(vm):
+def op_END(vm, _):
     pass
