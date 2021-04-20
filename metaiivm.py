@@ -27,11 +27,14 @@ def parse_file(file_object):
 
 class VM:
 
-    def __init__(self, input_buf, program=[], output_file=sys.stdout):
+    def __init__(self, input_buf, output_file=sys.stdout):
         self.output_file = output_file
 
-        self.input_buf_index = 0
+        self.reset(input_buf)
+
+    def reset(self, input_buf):
         self.input_buf = input_buf
+        self.input_buf_index = 0
 
         self.token_buf = None
         self.output_buf = []
@@ -47,6 +50,9 @@ class VM:
         self.is_err = False
 
         self.label_to_pc = {}
+
+    def run(self, code):
+        pass
 
     def label_generate(self):
         label = "L{}".format(self.label_counter)
@@ -116,6 +122,8 @@ def op_TST(vm, str_):
     else:
         vm.switch = False
 
+    vm.pc += 1
+
 
 def op_ID(vm, _):
     """After skipping initial whitespace in the input string, test if it begins
@@ -132,6 +140,8 @@ def op_ID(vm, _):
         vm.switch = True
     else:
         vm.switch = False
+
+    vm.pc += 1
 
 
 def op_NUM(vm, _):
@@ -150,6 +160,8 @@ def op_NUM(vm, _):
     else:
         vm.switch = False
 
+    vm.pc += 1
+
 
 def op_SR(vm, _):
     """After deleting initial whitespace in the input string, test if it begins
@@ -167,6 +179,8 @@ def op_SR(vm, _):
         vm.switch = True
     else:
         vm.switch = False
+
+    vm.pc += 1
 
 
 def op_CLL(vm, label):
@@ -192,11 +206,15 @@ def op_R(vm, _):
     vm.label2_pop()
     vm.pc_pop_set()
 
+    vm.pc += 1
+
 
 def op_SET(vm, _):
     """Set the switch to true.
     """
     vm.switch = True
+
+    vm.pc += 1
 
 
 def op_B(vm, label):
@@ -210,6 +228,8 @@ def op_BT(vm, label):
     """
     if vm.switch:
         vm.pc = vm.label_to_pc[label]
+    else:
+        vm.pc += 1
 
 
 def op_BF(vm, label):
@@ -217,6 +237,8 @@ def op_BF(vm, label):
     """
     if not vm.switch:
         vm.pc = vm.label_to_pc[label]
+    else:
+        vm.pc += 1
 
 
 def op_BE(vm, _):
@@ -224,6 +246,8 @@ def op_BE(vm, _):
     """
     if not vm.switch:
         vm.is_err = True
+    else:
+        vm.pc += 1
 
 
 def op_CL(vm, str_):
@@ -232,11 +256,15 @@ def op_CL(vm, str_):
     """
     vm.output_buf.append(str_)
 
+    vm.pc += 1
+
 
 def op_CI(vm, _):
     """Copy the token buffer to the output buffer.
     """
     vm.output_buf.append(vm.token_buf)
+
+    vm.pc += 1
 
 
 def op_GN1(vm, _):
@@ -250,6 +278,8 @@ def op_GN1(vm, _):
         vm.label1_set(label)
     vm.output_buf.append(label)
 
+    vm.pc += 1
+
 
 def op_GN2(vm, _):
     """Same as for GN1 except acting on the label 2 cell.
@@ -260,11 +290,15 @@ def op_GN2(vm, _):
         vm.label2_set(label)
     vm.output_buf.append(label)
 
+    vm.pc += 1
+
 
 def op_LB(vm, _):
     """Set the output buffer column to the first column.
     """
     vm.output_column = 0
+
+    vm.pc += 1
 
 
 def op_OUT(vm, _):
@@ -273,6 +307,8 @@ def op_OUT(vm, _):
     """
     vm.dump_output()
     vm.output_column == 8
+
+    vm.pc += 1
 
 
 def op_ADR(vm, start_label):

@@ -10,6 +10,20 @@ from metaiivm import op_LB, op_OUT, op_ADR
 
 
 #
+# Test executing programs
+
+@pytest.mark.parametrize("input_buf, code, output", [
+    ("bla", [Inst(op="END", arg=None, labels=[])], "")
+])
+def test_run(input_buf, code, output):
+    output_file = io.StringIO()
+    vm = VM(input_buf, output_file)
+    vm.run(code)
+
+    assert output == output_file.getvalue()
+
+
+#
 # Test reading opcodes from a file
 
 @pytest.mark.parametrize("input_, instrs_want", [
@@ -148,7 +162,7 @@ def test_op_R(label_target, pc_target):
     assert vm.label2() is None
 
     op_R(vm, None)
-    assert pc_original == vm.pc
+    assert pc_original + 1== vm.pc
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
 
@@ -194,7 +208,7 @@ def test_op_BT(switch, must_jump, label_target, pc_target):
     if must_jump:
         assert vm.pc == pc_target
     else:
-        assert vm.pc == vm_orig
+        assert vm.pc == vm_orig + 1
 
 
 @pytest.mark.parametrize("switch, must_jump, label_target, pc_target", [
@@ -212,7 +226,7 @@ def test_op_BF(switch, must_jump, label_target, pc_target):
     if must_jump:
         assert vm.pc == pc_target
     else:
-        assert vm.pc == vm_orig
+        assert vm.pc == vm_orig + 1
 
 
 @pytest.mark.parametrize("switch, must_err", [
