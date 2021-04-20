@@ -7,23 +7,20 @@ from collections import namedtuple
 LINE_RE = re.compile(r"^ +([A-Za-z]\w+) *([A-Za-z]\w+)?$")
 
 
-Inst = namedtuple("Inst", ["op", "labels", "arg"], defaults=[None, None])
+Inst = namedtuple("Inst", ["op", "arg", "labels"])
 
 
 def parse_file(file_object):
     instructions = []
-    instr_labels = []
+    labels = []
     for line in file_object:
         if line.startswith(" "):
             match = LINE_RE.match(line)
-            instr = Inst(
-                op=match[1], arg=match[2],
-                labels=instr_labels if instr_labels else None
-            )
+            instr = Inst(op=match[1], arg=match[2], labels=labels)
+            labels = []
             instructions.append(instr)
-            instr_labels = []
         else:
-            instr_labels.append(line.strip())
+            labels.append(line.strip())
 
     return instructions
 

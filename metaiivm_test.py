@@ -13,27 +13,26 @@ from metaiivm import op_LB, op_OUT, op_ADR
 # Test reading opcodes from a file
 
 @pytest.mark.parametrize("code, instrs_want", [
-    ("        ID\n", [Inst(op="ID")]),
-    ("        ID ARG\n", [Inst(op="ID", arg="ARG")]),
+    ("        ID\n", [Inst(op="ID", arg=None, labels=[])]),
+    ("        ID ARG\n", [Inst(op="ID", arg="ARG", labels=[])]),
     ("LBL\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["LBL"])]),
-    ("L01\nL02\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]),
+    ("L01\nL02\n        ID ARG\n",
+     [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]),
     (
-"""\
-L2
-        CLL AS
-        BT L2
-        SET
-        BE\
-""",
+        ("L2\n"
+         "        CLL AS\n"
+         "        BT L2\n"
+         "        SET\n"
+         "        BE"),
         [
             Inst(op="CLL", arg="AS", labels=["L2"]),
-            Inst(op="BT", arg="L2"),
-            Inst(op="SET"),
-            Inst(op="BE"),
+            Inst(op="BT", arg="L2", labels=[]),
+            Inst(op="SET", arg=None, labels=[]),
+            Inst(op="BE", arg=None, labels=[]),
         ]),
 ])
 def test_parse_file(code, instrs_want):
-    instrs_got  = parse_file(io.StringIO(code))
+    instrs_got = parse_file(io.StringIO(code))
 
     assert instrs_got == instrs_want
 
