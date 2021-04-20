@@ -103,6 +103,10 @@ class VM:
 
 
 def op_TST(vm, str_):
+    """After skipping initial whitespace in the input string compare it to the
+    string given as argument. If the comparison is met, skip over the string in
+    the input and set switch. If not met, reset switch.
+    """
     vm.skip_space()
 
     input_ = vm.input()
@@ -114,6 +118,11 @@ def op_TST(vm, str_):
 
 
 def op_ID(vm, _):
+    """After skipping initial whitespace in the input string, test if it begins
+    with an identifier, i.e., a letter followed by a sequence of letters and/or
+    digits. If so, copy the identifier to the token buffer; skip over it in the
+    input; and set switch. If not, reset switch.
+    """
     vm.skip_space()
 
     input_ = vm.input()
@@ -126,6 +135,11 @@ def op_ID(vm, _):
 
 
 def op_NUM(vm, _):
+    """After deleting initial whitespace in the input string, test if it begins
+    with an number, i.e., a sequence of digits. If so, copy the number to the
+    token buffer; skip over it in the input; and set switch. If not, reset
+    switch.
+    """
     vm.skip_space()
 
     input_ = vm.input()
@@ -138,6 +152,12 @@ def op_NUM(vm, _):
 
 
 def op_SR(vm, _):
+    """After deleting initial whitespace in the input string, test if it begins
+    with an string, i.e., a single quote followed by a sequence of any
+    characters other than a single quote followed by another single quote. If
+    so, copy the string (including enclosing quotes) to the token buffer; skip
+    over it in the input; and set switch. If not, reset switch.
+    """
     vm.skip_space()
 
     # TODO: single quote quoting: ('this is a string ''with'' a quote')
@@ -150,49 +170,80 @@ def op_SR(vm, _):
 
 
 def op_CLL(vm, label):
+    """Enter the subroutine beginning at label AAA. Push a stackframe of three
+    cells on the stack containing:
+
+        1. label 1 cell, initialized to blank
+
+        2. label 2 cell, initialized to blank
+
+        3. location cell, set to the return from call location
+    """
     vm.label1_push(None)
     vm.label2_push(None)
     vm.pc_set_push(vm.label_to_pc[label])
 
 
 def op_R(vm, _):
+    """Return from CLL call to location on the top of the stack and pop the
+    stackframe of three cells.
+    """
     vm.label1_pop()
     vm.label2_pop()
     vm.pc_pop_set()
 
 
 def op_SET(vm, _):
+    """Set the switch to true.
+    """
     vm.switch = True
 
 
 def op_B(vm, label):
+    """Branch unconditionally to the label AAA.
+    """
     vm.pc = vm.label_to_pc[label]
 
 
 def op_BT(vm, label):
+    """If the switch is true, branch to label AAA.
+    """
     if vm.switch:
         vm.pc = vm.label_to_pc[label]
 
 
 def op_BF(vm, label):
+    """If the switch is false, branch to label AAA.
+    """
     if not vm.switch:
         vm.pc = vm.label_to_pc[label]
 
 
 def op_BE(vm, _):
+    """If the switch is false, report error status and halt.
+    """
     if not vm.switch:
         vm.is_err = True
 
 
 def op_CL(vm, str_):
+    """Copy the variable length string (without enclosing quotes) given as
+    argument to the output buffer.
+    """
     vm.output_buf.append(str_)
 
 
 def op_CI(vm, _):
+    """Copy the token buffer to the output buffer.
+    """
     vm.output_buf.append(vm.token_buf)
 
 
 def op_GN1(vm, _):
+    """If the label 1 cell in the top stackframe is blank, then generate a
+    unique label and save it in the label 1 cell. In either case output the
+    label.
+    """
     label = vm.label1()
     if vm.label1() is None:
         label = vm.label_generate()
@@ -201,6 +252,8 @@ def op_GN1(vm, _):
 
 
 def op_GN2(vm, _):
+    """Same as for GN1 except acting on the label 2 cell.
+    """
     label = vm.label2()
     if vm.label2() is None:
         label = vm.label_generate()
@@ -209,17 +262,26 @@ def op_GN2(vm, _):
 
 
 def op_LB(vm, _):
+    """Set the output buffer column to the first column.
+    """
     vm.output_column = 0
 
 
 def op_OUT(vm, _):
+    """Output the output buffer with line terminator; clear it; and set the
+    output buffer column to the eighth column.
+    """
     vm.dump_output()
     vm.output_column == 8
 
 
 def op_ADR(vm, start_label):
+    """Pseudo operation that specifies the starting label to call.
+    """
     vm.pc = vm.label_to_pc[start_label]
 
 
 def op_END(vm, _):
+    """Pseudo operation that specifies the end of input.
+    """
     pass
