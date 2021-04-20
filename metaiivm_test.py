@@ -12,7 +12,7 @@ from metaiivm import op_LB, op_OUT, op_ADR
 #
 # Test reading opcodes from a file
 
-@pytest.mark.parametrize("code, instrs_want", [
+@pytest.mark.parametrize("input_, instrs_want", [
     ("        ID\n", [Inst(op="ID", arg=None, labels=[])]),
     ("        ID ARG\n", [Inst(op="ID", arg="ARG", labels=[])]),
     ("LBL\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["LBL"])]),
@@ -31,8 +31,8 @@ from metaiivm import op_LB, op_OUT, op_ADR
             Inst(op="BE", arg=None, labels=[]),
         ]),
 ])
-def test_parse_file(code, instrs_want):
-    instrs_got = parse_file(io.StringIO(code))
+def test_parse_file(input_, instrs_want):
+    instrs_got = parse_file(io.StringIO(input_))
 
     assert instrs_got == instrs_want
 
