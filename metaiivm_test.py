@@ -6,14 +6,21 @@ from metaiivm import VM, parse_file, Inst
 from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
 from metaiivm import op_B, op_BT, op_BF, op_BE
 from metaiivm import op_CL, op_CI, op_GN1, op_GN2
-from metaiivm import op_LB, op_OUT, op_ADR
+from metaiivm import op_LB, op_OUT, op_ADR, op_END
 
 
 #
 # Test executing programs
 
 @pytest.mark.parametrize("input_buf, code, output", [
-    ("bla", [Inst(op="END", arg=None, labels=[])], "")
+    ("bla", [Inst(op="END", arg=None, labels=[])], ""),
+    ("bla", [
+         Inst(op="ID", arg=None, labels=[]),
+         Inst(op="CI", arg=None, labels=[]),
+         Inst(op="CI", arg=None, labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+         Inst(op="END", arg=None, labels=[]),
+     ], "blabla\n"),
 ])
 def test_run(input_buf, code, output):
     output_file = io.StringIO()
@@ -290,13 +297,13 @@ def test_op_LB():
 def test_op_OUT():
     output = io.StringIO()
     vm = VM("bla", output_file=output)
-    vm.output_column = 0
-    vm.output_buf = ["teststr"]
+    vm.output_col = 0
+    vm.output_buf = ["teststr", "teststr2"]
 
     op_OUT(vm, None)
     assert len(vm.output_buf) == 0
     assert vm.output_col == 8
-    assert output.getvalue() == "teststr\n"
+    assert output.getvalue() == "teststrteststr2\n"
 
 
 def test_op_ADR():
@@ -309,5 +316,8 @@ def test_op_ADR():
 
 
 def test_op_END():
-    # noop
-    pass
+    vm = VM("bla")
+
+    assert vm.is_done is False
+    op_END(vm, None)
+    assert vm.is_done is True

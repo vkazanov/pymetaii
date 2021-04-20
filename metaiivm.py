@@ -27,6 +27,8 @@ def parse_file(file_object):
 
 class VM:
 
+    OPCODE_TO_HANDLER = {}
+
     def __init__(self, input_buf, output_file=sys.stdout):
         self.output_file = output_file
 
@@ -48,11 +50,20 @@ class VM:
 
         self.switch = False
         self.is_err = False
+        self.is_done = False
 
         self.label_to_pc = {}
 
     def run(self, code):
-        pass
+        # setup labels
+        for i, instr in enumerate(code):
+            for label in instr.labels:
+                self.label_to_pc[label] = i
+
+        while not self.is_err and not self.is_done:
+            instr = code[self.pc]
+            handler = self.OPCODE_TO_HANDLER[instr.op]
+            handler(self, instr.arg)
 
     def label_generate(self):
         label = "L{}".format(self.label_counter)
@@ -99,10 +110,12 @@ class VM:
 
     def dump_output(self):
         for _ in range(self.output_col):
-            print(" ", file=self.output_file)
+            print(" ", file=self.output_file, end="")
 
         for s in self.output_buf:
-            print(s, file=self.output_file)
+            print(s, file=self.output_file, end="")
+
+        print(file=self.output_file)
 
         self.output_buf = []
         self.output_col = 8
@@ -123,6 +136,7 @@ def op_TST(vm, str_):
         vm.switch = False
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["TST"] = op_TST
 
 
 def op_ID(vm, _):
@@ -142,6 +156,7 @@ def op_ID(vm, _):
         vm.switch = False
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["ID"] = op_ID
 
 
 def op_NUM(vm, _):
@@ -161,6 +176,7 @@ def op_NUM(vm, _):
         vm.switch = False
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["NUM"] = op_NUM
 
 
 def op_SR(vm, _):
@@ -181,6 +197,7 @@ def op_SR(vm, _):
         vm.switch = False
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["SR"] = op_SR
 
 
 def op_CLL(vm, label):
@@ -196,6 +213,7 @@ def op_CLL(vm, label):
     vm.label1_push(None)
     vm.label2_push(None)
     vm.pc_set_push(vm.label_to_pc[label])
+VM.OPCODE_TO_HANDLER["CLL"] = op_CLL
 
 
 def op_R(vm, _):
@@ -207,6 +225,7 @@ def op_R(vm, _):
     vm.pc_pop_set()
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["R"] = op_R
 
 
 def op_SET(vm, _):
@@ -215,12 +234,14 @@ def op_SET(vm, _):
     vm.switch = True
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["SET"] = op_SET
 
 
 def op_B(vm, label):
     """Branch unconditionally to the label AAA.
     """
     vm.pc = vm.label_to_pc[label]
+VM.OPCODE_TO_HANDLER["B"] = op_B
 
 
 def op_BT(vm, label):
@@ -230,6 +251,7 @@ def op_BT(vm, label):
         vm.pc = vm.label_to_pc[label]
     else:
         vm.pc += 1
+VM.OPCODE_TO_HANDLER["BT"] = op_BT
 
 
 def op_BF(vm, label):
@@ -239,6 +261,7 @@ def op_BF(vm, label):
         vm.pc = vm.label_to_pc[label]
     else:
         vm.pc += 1
+VM.OPCODE_TO_HANDLER["BF"] = op_BF
 
 
 def op_BE(vm, _):
@@ -248,6 +271,7 @@ def op_BE(vm, _):
         vm.is_err = True
     else:
         vm.pc += 1
+VM.OPCODE_TO_HANDLER["BE"] = op_BE
 
 
 def op_CL(vm, str_):
@@ -257,6 +281,7 @@ def op_CL(vm, str_):
     vm.output_buf.append(str_)
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["CL"] = op_CL
 
 
 def op_CI(vm, _):
@@ -265,6 +290,7 @@ def op_CI(vm, _):
     vm.output_buf.append(vm.token_buf)
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["CI"] = op_CI
 
 
 def op_GN1(vm, _):
@@ -279,6 +305,7 @@ def op_GN1(vm, _):
     vm.output_buf.append(label)
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["GN1"] = op_GN1
 
 
 def op_GN2(vm, _):
@@ -291,6 +318,7 @@ def op_GN2(vm, _):
     vm.output_buf.append(label)
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["GN2"] = op_GN2
 
 
 def op_LB(vm, _):
@@ -299,6 +327,7 @@ def op_LB(vm, _):
     vm.output_column = 0
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["LB"] = op_LB
 
 
 def op_OUT(vm, _):
@@ -306,18 +335,21 @@ def op_OUT(vm, _):
     output buffer column to the eighth column.
     """
     vm.dump_output()
-    vm.output_column == 8
+    vm.output_col = 8
 
     vm.pc += 1
+VM.OPCODE_TO_HANDLER["OUT"] = op_OUT
 
 
 def op_ADR(vm, start_label):
     """Pseudo operation that specifies the starting label to call.
     """
     vm.pc = vm.label_to_pc[start_label]
+VM.OPCODE_TO_HANDLER["ADR"] = op_ADR
 
 
 def op_END(vm, _):
     """Pseudo operation that specifies the end of input.
     """
-    pass
+    vm.is_done = True
+VM.OPCODE_TO_HANDLER["END"] = op_END
