@@ -13,7 +13,10 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
 # Test executing programs
 
 @pytest.mark.parametrize("input_buf, code, output", [
+    # Just stop immediately
     ("bla", [Inst(op="END", arg=None, labels=[])], ""),
+
+    # Output a string twice
     ("bla", [
          Inst(op="ID", arg=None, labels=[]),
          Inst(op="CI", arg=None, labels=[]),
@@ -21,6 +24,39 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
          Inst(op="OUT", arg=None, labels=[]),
          Inst(op="END", arg=None, labels=[]),
      ], "blabla\n"),
+
+    # Skip some code
+    ("bla bla2", [
+         Inst(op="ADR", arg="START", labels=[]),
+         Inst(op="ID", arg=None, labels=[]),
+         Inst(op="ID", arg=None, labels=["START"]),
+         Inst(op="CI", arg=None, labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+         Inst(op="END", arg=None, labels=[]),
+     ], "bla\n"),
+
+    # Check a string, successfully jump
+    ("correct bla2", [
+         Inst(op="TST", arg="correct", labels=[]),
+         Inst(op="BT", arg="CORRECT", labels=[]),
+         Inst(op="CL", arg="failure!", labels=[]),
+         Inst(op="B", arg="OUTPUT", labels=[]),
+         Inst(op="CL", arg="success!", labels=["CORRECT"]),
+         Inst(op="OUT", arg=None, labels=["OUTPUT"]),
+         Inst(op="END", arg=None, labels=[]),
+     ], "success!\n"),
+
+    # Check a string, do not jump
+    ("invalid bla2", [
+         Inst(op="TST", arg="correct", labels=[]),
+         Inst(op="BT", arg="CORRECT", labels=[]),
+         Inst(op="CL", arg="failure!", labels=[]),
+         Inst(op="B", arg="OUTPUT", labels=[]),
+         Inst(op="CL", arg="success!", labels=["CORRECT"]),
+         Inst(op="OUT", arg=None, labels=["OUTPUT"]),
+         Inst(op="END", arg=None, labels=[]),
+     ], "failure!\n"),
+
 ])
 def test_run(input_buf, code, output):
     output_file = io.StringIO()
@@ -36,6 +72,8 @@ def test_run(input_buf, code, output):
 @pytest.mark.parametrize("input_, instrs_want", [
     ("        ID\n", [Inst(op="ID", arg=None, labels=[])]),
     ("        ID ARG\n", [Inst(op="ID", arg="ARG", labels=[])]),
+    ("        ID 'ARG BLA'\n", [Inst(op="ID", arg="ARG BLA", labels=[])]),
+    ("        ID ''\n", [Inst(op="ID", arg="", labels=[])]),
     ("LBL\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["LBL"])]),
     ("L01\nL02\n        ID ARG\n",
      [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]),
@@ -169,7 +207,7 @@ def test_op_R(label_target, pc_target):
     assert vm.label2() is None
 
     op_R(vm, None)
-    assert pc_original + 1== vm.pc
+    assert pc_original + 1 == vm.pc
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
 

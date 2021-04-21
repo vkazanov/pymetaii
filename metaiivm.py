@@ -4,7 +4,7 @@ import sys
 from collections import namedtuple
 
 
-LINE_RE = re.compile(r"^ +([A-Za-z]\w+) *([A-Za-z]\w+)?$")
+LINE_RE = re.compile(r"^ +([A-Za-z]\w+) *([A-Za-z]\w+|'[^']*')?$")
 
 
 Inst = namedtuple("Inst", ["op", "arg", "labels"])
@@ -16,7 +16,14 @@ def parse_file(file_object):
     for line in file_object:
         if line.startswith(" "):
             match = LINE_RE.match(line)
-            instr = Inst(op=match[1], arg=match[2], labels=labels)
+            op = match[1]
+
+            # an argument can be a string literal
+            arg = match[2]
+            if arg and arg.startswith("'"):
+                arg = arg[1:-1]
+
+            instr = Inst(op=op, arg=arg, labels=labels)
             labels = []
             instructions.append(instr)
         else:
@@ -188,7 +195,6 @@ def op_SR(vm, _):
     """
     vm.skip_space()
 
-    # TODO: single quote quoting: ('this is a string ''with'' a quote')
     input_ = vm.input()
     if (match := re.match(r"^'[^']*'", input_)):
         vm.input_buf_index += len(match.group())
