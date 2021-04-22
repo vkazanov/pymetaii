@@ -1,0 +1,57 @@
+	ADR AEXP
+AEXP
+	CLL AS
+	BF L1
+L2
+	CLL AS
+	BT L2
+	SET
+	BE
+L1
+L3
+	R
+AS
+	ID
+	BF L4
+	CL 'address '
+	CI
+	OUT
+	TST ':='
+	BE
+	CLL EXPR
+	BE
+	CL 'store'
+	OUT
+	TST ';'
+	BE
+L4
+L5
+	R
+EXPR
+	CLL LITERAL
+	BF L6
+L7
+	TST '+'
+	BF L8
+	CLL LITERAL
+	BE
+	CL 'add'
+	OUT
+L8
+L9
+	BT L7
+	SET
+	BE
+L6
+L10
+	R
+LITERAL
+	NUM
+	BF L11
+	CL 'literal '
+	CI
+	OUT
+L11
+L12
+	R
+	END

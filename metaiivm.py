@@ -4,7 +4,7 @@ import sys
 from collections import namedtuple
 
 
-LINE_RE = re.compile(r"^ +([A-Za-z]\w+) *([A-Za-z]\w+|'[^']*')?$")
+LINE_RE = re.compile(r"^\s+([A-Za-z]\w*)\s*([A-Za-z]\w+|'[^']*')?$")
 
 
 Inst = namedtuple("Inst", ["op", "arg", "labels"])
@@ -14,8 +14,13 @@ def parse_file(file_object):
     instructions = []
     labels = []
     for line in file_object:
-        if line.startswith(" "):
+        if not line:
+            continue
+
+        if line[0].isspace():
             match = LINE_RE.match(line)
+
+            # Op itself
             op = match[1]
 
             # an argument can be a string literal
@@ -47,7 +52,7 @@ class VM:
 
         self.token_buf = None
         self.output_buf = []
-        self.output_col = 0
+        self.output_col = 8
 
         self.label_counter = 0
         self.label1_stack = [None]
@@ -61,7 +66,7 @@ class VM:
 
         self.label_to_pc = {}
 
-    def run(self, code):
+    def run(self, code, trace=False):
         # setup labels
         for i, instr in enumerate(code):
             for label in instr.labels:
@@ -70,6 +75,14 @@ class VM:
         while not self.is_err and not self.is_done:
             instr = code[self.pc]
             handler = self.OPCODE_TO_HANDLER[instr.op]
+            if trace:
+                input_buf = self.input_buf[self.input_buf_index:]
+                print(instr,
+                      ", input_buf='{}'".format(input_buf),
+                      ", token_buf='{}'".format(self.token_buf),
+                      ", call_stack='{}'".format(self.call_stack),
+                      ", output_buf='{}'".format(self.output_buf),
+                      file=sys.stderr)
             handler(self, instr.arg)
 
     def label_generate(self):
@@ -112,8 +125,12 @@ class VM:
         return self.input_buf[self.input_buf_index:]
 
     def skip_space(self):
-        while self.input_buf[self.input_buf_index].isspace():
-            self.input_buf_index += 1
+        buf = self.input_buf
+        buf_len = len(self.input_buf)
+        buf_index = self.input_buf_index
+        while buf_index < buf_len and buf[buf_index].isspace():
+            buf_index += 1
+        self.input_buf_index = buf_index
 
     def dump_output(self):
         for _ in range(self.output_col):
@@ -226,11 +243,14 @@ def op_R(vm, _):
     """Return from CLL call to location on the top of the stack and pop the
     stackframe of three cells.
     """
-    vm.label1_pop()
-    vm.label2_pop()
-    vm.pc_pop_set()
+    if vm.call_stack:
+        vm.label1_pop()
+        vm.label2_pop()
+        vm.pc_pop_set()
 
-    vm.pc += 1
+        vm.pc += 1
+    else:
+        vm.is_done = True
 VM.OPCODE_TO_HANDLER["R"] = op_R
 
 

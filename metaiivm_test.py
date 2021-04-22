@@ -6,7 +6,29 @@ from metaiivm import VM, parse_file, Inst
 from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
 from metaiivm import op_B, op_BT, op_BF, op_BE
 from metaiivm import op_CL, op_CI, op_GN1, op_GN2
-from metaiivm import op_LB, op_OUT, op_ADR, op_END
+from metaiivm import op_LB, op_OUT, op_ADR
+
+
+# Test the AEXP example language
+@pytest.mark.parametrize("masm_file, aexp_file, result_file", [
+    ("tests/aexp.masm", "tests/aexp_expr.aexp",
+     "tests/aexp_expr_compiled.output"),
+    ("tests/aexp.masm", "tests/aexp_expr_simple.aexp",
+     "tests/aexp_expr_simple_compiled.output"),
+    ("tests/aexp_add.masm", "tests/aexp_add.aexp",
+     "tests/aexp_add_compiled.output"),
+])
+def test_aexp(masm_file, aexp_file, result_file):
+    code = parse_file(open(masm_file))
+    expr = open(aexp_file).read()
+    result = open(result_file).read()
+
+    output_file = io.StringIO()
+    vm = VM(expr, output_file)
+
+    vm.run(code)
+
+    assert result == output_file.getvalue()
 
 
 #
@@ -23,7 +45,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
          Inst(op="CI", arg=None, labels=[]),
          Inst(op="OUT", arg=None, labels=[]),
          Inst(op="END", arg=None, labels=[]),
-     ], "blabla\n"),
+     ], "        blabla\n"),
 
     # Skip some code
     ("bla bla2", [
@@ -34,7 +56,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
          Inst(op="CI", arg=None, labels=[]),
          Inst(op="OUT", arg=None, labels=[]),
          Inst(op="END", arg=None, labels=[]),
-     ], "bla\n"),
+     ], "        bla\n"),
 
     # Check a string, successfully jump
     ("correct bla2", [
@@ -47,7 +69,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
 
          Inst(op="OUT", arg=None, labels=["OUTPUT"]),
          Inst(op="END", arg=None, labels=[]),
-     ], "success!\n"),
+     ], "        success!\n"),
 
     # Check a string, do not jump
     ("invalid bla2", [
@@ -60,7 +82,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
 
          Inst(op="OUT", arg=None, labels=["OUTPUT"]),
          Inst(op="END", arg=None, labels=[]),
-     ], "failure!\n"),
+     ], "        failure!\n"),
 
     # Check an input str, make a call if correct
     ("correct bla2", [
@@ -75,7 +97,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
 
          Inst(op="CL", arg="function", labels=["FUNCTIONLABEL"]),
          Inst(op="R", arg=None, labels=[]),
-     ], "functionafter\n"),
+     ], "        functionafter\n"),
 ])
 def test_run(input_buf, code, output):
     output_file = io.StringIO()
@@ -137,11 +159,13 @@ def test_op_TST(vm_buf_begin, op_arg, vm_buf_end, is_success):
 
 
 @pytest.mark.parametrize("vm_buf_begin, token_found, vm_buf_end, is_success", [
+    ("res:=5+6;", "res", ":=5+6;", True),
     ("id", "id", "", True),
     ("    id", "id", "", True),
     ("    id1", "id1", "", True),
     ("    1id", None, "1id", False),
     ("1id", None, "1id", False),
+    ("", None, "", False),
 ])
 def test_op_ID(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
@@ -209,10 +233,10 @@ def test_op_CLL(label_target, pc_target):
     assert vm.label2() is None
 
 
-@pytest.mark.parametrize("label_target, pc_target", [
-    ("TARGET1", 10)
+@pytest.mark.parametrize("label_target, pc_target, is_done", [
+    ("TARGET1", 10, False)
 ])
-def test_op_R(label_target, pc_target):
+def test_op_R_call(label_target, pc_target, is_done):
     vm = VM("bla")
     pc_original = vm.pc
     vm.label_to_pc[label_target] = pc_target
@@ -228,10 +252,23 @@ def test_op_R(label_target, pc_target):
     assert vm.label1() is None
     assert vm.label2() is None
 
+    assert vm.is_done is False
     op_R(vm, None)
+    assert vm.is_done is is_done
     assert pc_original + 1 == vm.pc
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
+
+
+def test_op_R_done():
+    # it's kinda unusual that calling R without a prior CLL call also halts the
+    # VM - and that's the correct way to do it. Feels error prone. Oh, well...
+
+    vm = VM("bla")
+
+    assert vm.is_done is False
+    op_R(vm, None)
+    assert vm.is_done is True
 
 
 @pytest.mark.parametrize("switch_orig", [
@@ -367,6 +404,7 @@ def test_op_OUT():
 
 
 def test_op_ADR():
+    # TODO: Should be a metaop? Just a starting pc?
     vm = VM("bla")
     vm.label_to_pc["START"] = 100
 
@@ -376,8 +414,5 @@ def test_op_ADR():
 
 
 def test_op_END():
-    vm = VM("bla")
-
-    assert vm.is_done is False
-    op_END(vm, None)
-    assert vm.is_done is True
+    # dummy op, end of input
+    pass

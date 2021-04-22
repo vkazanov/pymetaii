@@ -1,0 +1,5 @@
+        address res
+        literal 5
+        literal 6
+        add
+        store
