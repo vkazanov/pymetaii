@@ -2,6 +2,7 @@
 import re
 import sys
 from collections import namedtuple
+import argparse
 
 
 LINE_RE = re.compile(r"^\s+([A-Za-z]\w*)\s*([A-Za-z]\w+|'[^']*')?$")
@@ -10,7 +11,23 @@ LINE_RE = re.compile(r"^\s+([A-Za-z]\w*)\s*([A-Za-z]\w+|'[^']*')?$")
 Inst = namedtuple("Inst", ["op", "arg", "labels"])
 
 
-def parse_file(file_object):
+def main():
+    descr = "META II metacompiler."
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument("code", type=argparse.FileType("r"),
+                        help="path to a META II parsing machine code ")
+    parser.add_argument("--input", type=argparse.FileType("r"),
+                        default=sys.stdin,
+                        help="path to input (stdin by default) ")
+    parser.add_argument("--trace", action="store_true")
+    args = parser.parse_args()
+
+    vm = VM(args.input.read())
+    code = parse_code(args.code)
+    vm.run(code, trace=args.trace)
+
+
+def parse_code(file_object):
     instructions = []
     labels = []
     for line in file_object:
@@ -379,3 +396,7 @@ def op_END(vm, _):
     """
     vm.is_done = True
 VM.OPCODE_TO_HANDLER["END"] = op_END
+
+
+if __name__ == '__main__':
+    main()

@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from metaiivm import VM, parse_file, Inst
+from metaiivm import VM, parse_code, Inst
 from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
 from metaiivm import op_B, op_BT, op_BF, op_BE
 from metaiivm import op_CL, op_CI, op_GN1, op_GN2
@@ -12,14 +12,14 @@ from metaiivm import op_LB, op_OUT, op_ADR
 # Test the AEXP example language
 @pytest.mark.parametrize("masm_file, aexp_file, result_file", [
     ("tests/aexp.masm", "tests/aexp_expr.aexp",
-     "tests/aexp_expr_compiled.output"),
+     "tests/aexp_expr.output"),
     ("tests/aexp.masm", "tests/aexp_expr_simple.aexp",
-     "tests/aexp_expr_simple_compiled.output"),
+     "tests/aexp_expr_simple.output"),
     ("tests/aexp_add.masm", "tests/aexp_add.aexp",
-     "tests/aexp_add_compiled.output"),
+     "tests/aexp_add.output"),
 ])
 def test_aexp(masm_file, aexp_file, result_file):
-    code = parse_file(open(masm_file))
+    code = parse_code(open(masm_file))
     expr = open(aexp_file).read()
     result = open(result_file).read()
 
@@ -135,7 +135,7 @@ def test_run(input_buf, code, output):
      ]),
 ])
 def test_parse_file(input_, instrs_want):
-    instrs_got = parse_file(io.StringIO(input_))
+    instrs_got = parse_code(io.StringIO(input_))
 
     assert instrs_got == instrs_want
 
