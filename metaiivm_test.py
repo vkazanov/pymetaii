@@ -29,6 +29,7 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
     ("bla bla2", [
          Inst(op="ADR", arg="START", labels=[]),
          Inst(op="ID", arg=None, labels=[]),
+
          Inst(op="ID", arg=None, labels=["START"]),
          Inst(op="CI", arg=None, labels=[]),
          Inst(op="OUT", arg=None, labels=[]),
@@ -41,7 +42,9 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
          Inst(op="BT", arg="CORRECT", labels=[]),
          Inst(op="CL", arg="failure!", labels=[]),
          Inst(op="B", arg="OUTPUT", labels=[]),
+
          Inst(op="CL", arg="success!", labels=["CORRECT"]),
+
          Inst(op="OUT", arg=None, labels=["OUTPUT"]),
          Inst(op="END", arg=None, labels=[]),
      ], "success!\n"),
@@ -52,11 +55,27 @@ from metaiivm import op_LB, op_OUT, op_ADR, op_END
          Inst(op="BT", arg="CORRECT", labels=[]),
          Inst(op="CL", arg="failure!", labels=[]),
          Inst(op="B", arg="OUTPUT", labels=[]),
+
          Inst(op="CL", arg="success!", labels=["CORRECT"]),
+
          Inst(op="OUT", arg=None, labels=["OUTPUT"]),
          Inst(op="END", arg=None, labels=[]),
      ], "failure!\n"),
 
+    # Check an input str, make a call if correct
+    ("correct bla2", [
+         Inst(op="ADR", arg="START", labels=[]),
+
+         Inst(op="TST", arg="correct", labels=["START"]),
+         Inst(op="BF", arg="END", labels=[]),
+         Inst(op="CLL", arg="FUNCTIONLABEL", labels=[]),
+         Inst(op="CL", arg="after", labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+         Inst(op="END", arg=None, labels=["END"]),
+
+         Inst(op="CL", arg="function", labels=["FUNCTIONLABEL"]),
+         Inst(op="R", arg=None, labels=[]),
+     ], "functionafter\n"),
 ])
 def test_run(input_buf, code, output):
     output_file = io.StringIO()
@@ -75,20 +94,23 @@ def test_run(input_buf, code, output):
     ("        ID 'ARG BLA'\n", [Inst(op="ID", arg="ARG BLA", labels=[])]),
     ("        ID ''\n", [Inst(op="ID", arg="", labels=[])]),
     ("LBL\n        ID ARG\n", [Inst(op="ID", arg="ARG", labels=["LBL"])]),
-    ("L01\nL02\n        ID ARG\n",
-     [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]),
     (
-        ("L2\n"
-         "        CLL AS\n"
-         "        BT L2\n"
-         "        SET\n"
-         "        BE"),
-        [
-            Inst(op="CLL", arg="AS", labels=["L2"]),
-            Inst(op="BT", arg="L2", labels=[]),
-            Inst(op="SET", arg=None, labels=[]),
-            Inst(op="BE", arg=None, labels=[]),
-        ]),
+        "L01\nL02\n        ID ARG\n",
+        [Inst(op="ID", arg="ARG", labels=["L01", "L02"])]
+    ),
+    ((
+        "L2\n"
+        "        CLL AS\n"
+        "        BT L2\n"
+        "        SET\n"
+        "        BE"
+    ),
+     [
+         Inst(op="CLL", arg="AS", labels=["L2"]),
+         Inst(op="BT", arg="L2", labels=[]),
+         Inst(op="SET", arg=None, labels=[]),
+         Inst(op="BE", arg=None, labels=[]),
+     ]),
 ])
 def test_parse_file(input_, instrs_want):
     instrs_got = parse_file(io.StringIO(input_))
