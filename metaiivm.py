@@ -4,6 +4,10 @@ import sys
 from collections import namedtuple
 import argparse
 
+# TODO: handling output errors
+# TODO: move ops into the VM
+# TODO: README
+
 
 LINE_RE = re.compile(r"^\s+([A-Za-z]\w*)\s*([A-Za-z]\w+|'[^']*')?$")
 
@@ -101,6 +105,9 @@ class VM:
                       ", output_buf='{}'".format(self.output_buf),
                       file=sys.stderr)
             handler(self, instr.arg)
+
+        if self.is_err:
+            print("Failed to parse input!", file=sys.stderr)
 
     def label_generate(self):
         label = "L{}".format(self.label_counter)
