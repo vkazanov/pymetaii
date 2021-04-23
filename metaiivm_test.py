@@ -68,13 +68,13 @@ def test_aexp(masm_file, aexp_file, result_file):
     # Skip some code
     ("bla bla2", [
          Inst(op="ADR", arg="START", labels=[]),
-         Inst(op="ID", arg=None, labels=[]),
-
-         Inst(op="ID", arg=None, labels=["START"]),
-         Inst(op="CI", arg=None, labels=[]),
+         Inst(op="CL", arg="before", labels=[]),
+         Inst(op="CL", arg="before1", labels=[]),
+         Inst(op="CL", arg="before2", labels=[]),
+         Inst(op="CL", arg="after", labels=["START"]),
          Inst(op="OUT", arg=None, labels=[]),
          Inst(op="END", arg=None, labels=[]),
-     ], "        bla\n"),
+     ], "        after\n"),
 
     # Check a string, successfully jump
     ("correct bla2", [
