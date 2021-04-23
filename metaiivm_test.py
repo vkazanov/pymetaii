@@ -214,20 +214,23 @@ def test_op_NUM(vm_buf_begin, token_found, vm_buf_end, is_success):
         assert vm.token_buf == token_found
 
 
-@pytest.mark.parametrize("vm_buf_begin, vm_buf_end, is_success", [
-    ("id", "id", False),
-    ("    id", "id", False),
-    ("    id1", "id1", False),
-    ("    1id", "1id", False),
-    ("'1id'", "", True),
-    ("    '123id'", "", True),
-    ("'123'id", "id", True),
+@pytest.mark.parametrize("vm_buf_begin, token_found, vm_buf_end, is_success", [
+    ("id", None, "id", False),
+    ("    id", None, "id", False),
+    ("    id1", None, "id1", False),
+    ("    1id", None, "1id", False),
+    ("'1id'", "'1id'", "", True),
+    ("    '123id'", "'123id'", "", True),
+    ("'123'id", "'123'", "id", True),
 ])
-def test_op_SR(vm_buf_begin, vm_buf_end, is_success):
+def test_op_SR(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
+
+    vm.token_buf is None
     op_SR(vm, None)
 
     assert vm.switch == is_success
+    assert vm.token_buf == token_found
     assert vm.input() == vm_buf_end
 
 

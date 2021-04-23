@@ -4,8 +4,6 @@ import sys
 from collections import namedtuple
 import argparse
 
-# TODO: malformed output (labels not aligned)
-# TODO: handling output errors
 # TODO: move ops into the VM
 # TODO: README
 
@@ -239,6 +237,7 @@ def op_SR(vm, _):
     input_ = vm.input()
     if (match := re.match(r"^'[^']*'", input_)):
         vm.input_buf_index += len(match.group())
+        vm.token_buf = match.group()
         vm.switch = True
     else:
         vm.switch = False
