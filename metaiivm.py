@@ -5,7 +5,6 @@ from collections import namedtuple
 import argparse
 
 # TODO: move ops into the VM
-# TODO: README
 
 
 LINE_RE = re.compile(r"^\s+([A-Za-z]\w*)\s*([A-Za-z]\w+|'[^']*')?$")

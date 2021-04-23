@@ -1,0 +1,62 @@
+* META II metacompiler
+
+  A Python 3 implementation of the famous META II metacompiler virtual machine and a
+  compiler writing domain-specific language.
+
+  Based on the original virtual machine from the "META II: A Syntax-Oriented Compiler
+  Writing Language" 1965 paper[1], which is also explained in a brilliant tutorial[2] by James
+  M. Neighbors. Wikipedia also has a page on META II[3]. There are numerous
+  implementations in different languages out there [4][5][6].
+
+  Sources:
+
+  1. http://www.chilton-computing.org.uk/acl/literature/reports/p025.htm
+
+  2. http://www.bayfronttechnologies.com/mc_tutorial.html
+
+  3. https://en.wikipedia.org/wiki/META_II
+
+  4. https://github.com/stevenbagley/metaii
+
+  5. https://github.com/EyeBool/Meta-II-Compiler
+
+  6. https://github.com/siraben/meta-II
+
+* Usage
+
+  The parsing virtual machine is implemented in =metaiivm.py=. VM code for the DSL is in
+  =metaii.masm=. META II DSL is in =metaii.meta=.
+
+  Having these it's possible to regenerate the =masm= file:
+
+  #+begin_src shell-script
+    python metaiivm.py metaii.masm < metaii.meta > metaii-copy.masm
+    diff metaii-copy.masm metaii.masm
+    # nothing here - we can reproduce all the VM code necessary from the DSL
+  #+end_src
+
+  It's also possible to use the VM from Python code:
+
+  #+begin_src python
+    import metaiivm
+    import io
+
+    code = parse_code(open("metaii.masm"))
+    meta_dsl = open("metaii.meta").read()
+
+    output_file = io.StringIO()
+    vm = metaiivm.VM(meta_dsl, output_file)
+    vm.run(code)
+
+    # print a fresh META II VM code copy
+    print(output_file.getvalue())
+  #+end_src
+
+* Testing
+
+  Running VM tests requires the [[https://docs.pytest.org/][pytest]] package:
+
+  #+begin_src shell-script
+    py.test metaiivm_test.py
+    # ....
+  #+end_src
