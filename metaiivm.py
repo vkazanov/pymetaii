@@ -4,6 +4,7 @@ import sys
 from collections import namedtuple
 import argparse
 
+# TODO: malformed output (labels not aligned)
 # TODO: handling output errors
 # TODO: move ops into the VM
 # TODO: README
@@ -20,9 +21,9 @@ def main():
     parser = argparse.ArgumentParser(description=descr)
     parser.add_argument("code", type=argparse.FileType("r"),
                         help="path to a META II parsing machine code ")
-    parser.add_argument("--input", type=argparse.FileType("r"),
+    parser.add_argument("-i", "--input", type=argparse.FileType("r"),
                         default=sys.stdin,
-                        help="path to input (stdin by default) ")
+                        help="file with input to be parsed (stdin by default)")
     parser.add_argument("--trace", action="store_true")
     args = parser.parse_args()
 
@@ -75,7 +76,7 @@ class VM:
         self.output_buf = []
         self.output_col = 8
 
-        self.label_counter = 0
+        self.label_counter = 1
         self.label1_stack = [None]
         self.label2_stack = [None]
         self.call_stack = []
@@ -166,7 +167,6 @@ class VM:
         print(file=self.output_file)
 
         self.output_buf = []
-        self.output_col = 8
 
 
 def op_TST(vm, str_):
@@ -374,7 +374,7 @@ VM.OPCODE_TO_HANDLER["GN2"] = op_GN2
 def op_LB(vm, _):
     """Set the output buffer column to the first column.
     """
-    vm.output_column = 0
+    vm.output_col = 0
 
     vm.pc += 1
 VM.OPCODE_TO_HANDLER["LB"] = op_LB

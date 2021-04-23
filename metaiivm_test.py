@@ -11,12 +11,17 @@ from metaiivm import op_LB, op_OUT, op_ADR
 
 # Test the AEXP example language
 @pytest.mark.parametrize("masm_file, aexp_file, result_file", [
+    # expression language
     ("tests/aexp.masm", "tests/aexp_expr.aexp",
      "tests/aexp_expr.output"),
     ("tests/aexp.masm", "tests/aexp_expr_simple.aexp",
      "tests/aexp_expr_simple.output"),
     ("tests/aexp_add.masm", "tests/aexp_add.aexp",
      "tests/aexp_add.output"),
+
+    # let's compile the compiler and see if it's circular
+    ("metaii.masm", "metaii.meta",
+     "metaii.masm"),
 ])
 def test_aexp(masm_file, aexp_file, result_file):
     code = parse_code(open(masm_file))
@@ -27,7 +32,6 @@ def test_aexp(masm_file, aexp_file, result_file):
     vm = VM(expr, output_file)
 
     vm.run(code)
-
     assert result == output_file.getvalue()
 
 
@@ -46,6 +50,20 @@ def test_aexp(masm_file, aexp_file, result_file):
          Inst(op="OUT", arg=None, labels=[]),
          Inst(op="END", arg=None, labels=[]),
      ], "        blabla\n"),
+
+    # Output a label and a string
+    ("", [
+         Inst(op="CL", arg="test1", labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+
+         Inst(op="LB", arg=None, labels=[]),
+         Inst(op="GN1", arg=None, labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+
+         Inst(op="CL", arg="test2", labels=[]),
+         Inst(op="OUT", arg=None, labels=[]),
+         Inst(op="END", arg=None, labels=[]),
+     ], "        test1\nL1\n        test2\n"),
 
     # Skip some code
     ("bla bla2", [
@@ -368,27 +386,27 @@ def test_op_CI():
 
 def test_op_GN1():
     vm = VM("bla")
-    assert vm.label_counter == 0
+    assert vm.label_counter == 1
     assert vm.label1() is None
     op_GN1(vm, None)
-    assert vm.label1() == "L0"
-    assert vm.output_buf[-1] == "L0"
+    assert vm.label1() == "L1"
+    assert vm.output_buf[-1] == "L1"
 
 
 def test_op_GN2():
     vm = VM("bla")
-    assert vm.label_counter == 0
+    assert vm.label_counter == 1
     assert vm.label2() is None
     op_GN2(vm, None)
-    assert vm.label2() == "L0"
-    assert vm.output_buf[-1] == "L0"
+    assert vm.label2() == "L1"
+    assert vm.output_buf[-1] == "L1"
 
 
 def test_op_LB():
     vm = VM("bla")
-    vm.output_column = 10
+    vm.output_col = 10
     op_LB(vm, None)
-    assert vm.output_column == 0
+    assert vm.output_col == 0
 
 
 def test_op_OUT():
