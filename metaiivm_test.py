@@ -3,10 +3,6 @@ import io
 import pytest
 
 from metaiivm import VM, parse_code, Inst
-from metaiivm import op_TST, op_ID, op_NUM, op_SR, op_CLL, op_R, op_SET
-from metaiivm import op_B, op_BT, op_BF, op_BE
-from metaiivm import op_CL, op_CI, op_GN1, op_GN2
-from metaiivm import op_LB, op_OUT, op_ADR
 
 
 # Test the AEXP example language
@@ -170,7 +166,7 @@ def test_parse_file(input_, instrs_want):
 ])
 def test_op_TST(vm_buf_begin, op_arg, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_TST(vm, op_arg)
+    vm.op_TST(op_arg)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -187,7 +183,7 @@ def test_op_TST(vm_buf_begin, op_arg, vm_buf_end, is_success):
 ])
 def test_op_ID(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_ID(vm, None)
+    vm.op_ID(None)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -206,7 +202,7 @@ def test_op_ID(vm_buf_begin, token_found, vm_buf_end, is_success):
 ])
 def test_op_NUM(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
-    op_NUM(vm, None)
+    vm.op_NUM(None)
 
     assert vm.switch == is_success
     assert vm.input() == vm_buf_end
@@ -227,7 +223,7 @@ def test_op_SR(vm_buf_begin, token_found, vm_buf_end, is_success):
     vm = VM(vm_buf_begin)
 
     vm.token_buf is None
-    op_SR(vm, None)
+    vm.op_SR(None)
 
     assert vm.switch == is_success
     assert vm.token_buf == token_found
@@ -248,7 +244,7 @@ def test_op_CLL(label_target, pc_target):
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
 
-    op_CLL(vm, label_target)
+    vm.op_CLL(label_target)
     assert vm.pc == pc_target
     assert vm.label1() is None
     assert vm.label2() is None
@@ -268,13 +264,13 @@ def test_op_R_call(label_target, pc_target, is_done):
     assert vm.label1() == "label1_orig"
     assert vm.label2() == "label2_orig"
 
-    op_CLL(vm, label_target)
+    vm.op_CLL(label_target)
     assert vm.pc == pc_target
     assert vm.label1() is None
     assert vm.label2() is None
 
     assert vm.is_done is False
-    op_R(vm, None)
+    vm.op_R(None)
     assert vm.is_done is is_done
     assert pc_original + 1 == vm.pc
     assert vm.label1() == "label1_orig"
@@ -288,7 +284,7 @@ def test_op_R_done():
     vm = VM("bla")
 
     assert vm.is_done is False
-    op_R(vm, None)
+    vm.op_R(None)
     assert vm.is_done is True
 
 
@@ -299,7 +295,7 @@ def test_op_SET(switch_orig):
     vm = VM("bla")
     vm.switch = switch_orig
 
-    op_SET(vm, None)
+    vm.op_SET(None)
     assert vm.switch is True
 
 
@@ -314,7 +310,7 @@ def test_op_B(switch, label_target, pc_target):
     vm_orig = vm.pc
     assert vm_orig != pc_target
 
-    op_B(vm, "TARGET")
+    vm.op_B("TARGET")
     assert vm.pc == pc_target
 
 
@@ -329,7 +325,7 @@ def test_op_BT(switch, must_jump, label_target, pc_target):
     vm_orig = vm.pc
     assert vm_orig != pc_target
 
-    op_BT(vm, "TARGET")
+    vm.op_BT("TARGET")
     if must_jump:
         assert vm.pc == pc_target
     else:
@@ -347,7 +343,7 @@ def test_op_BF(switch, must_jump, label_target, pc_target):
     vm_orig = vm.pc
     assert vm_orig != pc_target
 
-    op_BF(vm, "TARGET")
+    vm.op_BF("TARGET")
     if must_jump:
         assert vm.pc == pc_target
     else:
@@ -363,7 +359,7 @@ def test_op_BE(switch, must_err):
     vm.switch = switch
 
     assert not vm.is_err
-    op_BE(vm, None)
+    vm.op_BE(None)
     if must_err:
         assert vm.is_err
     else:
@@ -374,7 +370,7 @@ def test_op_CL():
     vm = VM("bla")
 
     assert not vm.output_buf
-    op_CL(vm, "test")
+    vm.op_CL("test")
     assert vm.output_buf[-1] == "test"
 
 
@@ -383,7 +379,7 @@ def test_op_CI():
     vm.token_buf = "test"
 
     assert not vm.output_buf
-    op_CI(vm, None)
+    vm.op_CI(None)
     assert vm.output_buf[-1] == "test"
 
 
@@ -391,7 +387,7 @@ def test_op_GN1():
     vm = VM("bla")
     assert vm.label_counter == 1
     assert vm.label1() is None
-    op_GN1(vm, None)
+    vm.op_GN1(None)
     assert vm.label1() == "L1"
     assert vm.output_buf[-1] == "L1"
 
@@ -400,7 +396,7 @@ def test_op_GN2():
     vm = VM("bla")
     assert vm.label_counter == 1
     assert vm.label2() is None
-    op_GN2(vm, None)
+    vm.op_GN2(None)
     assert vm.label2() == "L1"
     assert vm.output_buf[-1] == "L1"
 
@@ -408,7 +404,7 @@ def test_op_GN2():
 def test_op_LB():
     vm = VM("bla")
     vm.output_col = 10
-    op_LB(vm, None)
+    vm.op_LB(None)
     assert vm.output_col == 0
 
 
@@ -418,7 +414,7 @@ def test_op_OUT():
     vm.output_col = 0
     vm.output_buf = ["teststr", "teststr2"]
 
-    op_OUT(vm, None)
+    vm.op_OUT(None)
     assert len(vm.output_buf) == 0
     assert vm.output_col == 8
     assert output.getvalue() == "teststrteststr2\n"
@@ -430,7 +426,7 @@ def test_op_ADR():
     vm.label_to_pc["START"] = 100
 
     assert vm.pc == 0
-    op_ADR(vm, "START")
+    vm.op_ADR("START")
     assert vm.pc == 100
 
 
