@@ -4,8 +4,8 @@
   compiler writing domain-specific language.
 
   Based on the original virtual machine from the "META II: A Syntax-Oriented Compiler
-  Writing Language" 1965 paper[1], which is also explained in a brilliant tutorial[2] by James
-  M. Neighbors. Wikipedia also has a page on META II[3]. There are numerous
+  Writing Language" 1965 paper[1], which is also explained in a brilliant tutorial[2] by
+  James M. Neighbors. Wikipedia also has a page on META II[3]. There are numerous
   implementations in different languages out there [4][5][6].
 
   Sources:
@@ -25,7 +25,8 @@
 * Usage
 
   The parsing virtual machine is implemented in =metaiivm.py=. VM code for the DSL is in
-  =metaii.masm=. META II DSL is in =metaii.meta=.
+  =metaii.masm=. META II DSL implemented in META II DSL is in =metaii.meta=. And yes, it's a
+  recursive definition, thus "metacompiler".
 
   Having these it's possible to regenerate the =masm= file:
 
